@@ -7,7 +7,7 @@ const Members: React.FC = () => {
   const { members, deleteMember } = useChurchData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState(null);
+  const [editingMember, setEditingMember] = useState<any>(null);
 
   const filteredMembers = members.filter(member =>
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,25 +30,71 @@ const Members: React.FC = () => {
     setEditingMember(null);
   };
 
+  // Utility function to export members to CSV
+  const exportMembersToCSV = (membersToExport: typeof members) => {
+    if (membersToExport.length === 0) {
+      alert('No members to export.');
+      return;
+    }
+
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Status', 'Join Date'];
+
+    const rows = membersToExport.map(member => [
+      member.id,
+      member.name,
+      member.email,
+      member.phone,
+      member.role,
+      member.status,
+      new Date(member.joinDate).toLocaleDateString(),
+    ]);
+
+    const csvContent =
+      [headers, ...rows]
+        .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `members_export_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Members</h1>
             <p className="text-gray-600">Manage your church members and their information</p>
           </div>
-          <button
-            onClick={() => {
-              setEditingMember(null);
-              setIsAddModalOpen(true);
-            }}
-            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <UserPlus className="h-5 w-5 mr-2" />
-            Add Member
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                setEditingMember(null);
+                setIsAddModalOpen(true);
+              }}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <UserPlus className="h-5 w-5 mr-2" />
+              Add Member
+            </button>
+
+            <button
+              onClick={() => exportMembersToCSV(filteredMembers)}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+              title="Export Members"
+            >
+              Export
+            </button>
+          </div>
         </div>
       </div>
 
@@ -86,12 +132,14 @@ const Members: React.FC = () => {
                 <button 
                   onClick={() => handleEditMember(member)}
                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  aria-label={`Edit ${member.name}`}
                 >
                   <Edit className="h-4 w-4" />
                 </button>
                 <button 
                   onClick={() => handleDeleteMember(member.id)}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  aria-label={`Delete ${member.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

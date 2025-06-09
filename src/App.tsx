@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ChurchDataProvider } from './context/ChurchDataContext';
+import AuthForm from './components/AuthForm';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import Attendance from './pages/Attendance';
@@ -11,11 +15,29 @@ import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Settings from './pages/Settings';
 import AIFeatures from './pages/AIFeatures';
-import { ChurchDataProvider } from './context/ChurchDataContext';
+import { Loader } from 'lucide-react';
 
-function App() {
+const AppContent: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-12 w-12 text-white animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading ChurchOS...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth form if not authenticated
+  if (!isAuthenticated) {
+    return <AuthForm />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -56,25 +78,24 @@ function App() {
           setIsOpen={setSidebarOpen}
         />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
-            <div className="flex items-center justify-between px-4 py-3">
-              <h1 className="text-xl font-semibold text-gray-900">Church Manager</h1>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </header>
+          <Header 
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
           <main className="flex-1 overflow-auto">
             {renderContent()}
           </main>
         </div>
       </div>
     </ChurchDataProvider>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

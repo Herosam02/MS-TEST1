@@ -70,6 +70,15 @@ interface User {
   lastLogin: string;
 }
 
+interface Report {
+  id: string;
+  title: string;
+  type: string;
+  dateGenerated: string;
+  status: 'Ready' | 'Processing' | 'Failed';
+  description: string;
+}
+
 interface ChurchSettings {
   churchName: string;
   pastorName: string;
@@ -100,6 +109,7 @@ interface ChurchData {
   equipment: Equipment[];
   smsMessages: SMSMessage[];
   users: User[];
+  reports: Report[];
   settings: ChurchSettings;
   addMember: (member: Omit<Member, 'id'>) => void;
   updateMember: (id: string, member: Partial<Member>) => void;
@@ -116,6 +126,8 @@ interface ChurchData {
   addUser: (user: Omit<User, 'id'>) => void;
   updateUser: (id: string, user: Partial<User>) => void;
   deleteUser: (id: string) => void;
+  addReport: (report: Omit<Report, 'id'>) => void;
+  generateReport: (type: string) => void;
   updateSettings: (settings: Partial<ChurchSettings>) => void;
 }
 
@@ -138,6 +150,7 @@ const STORAGE_KEYS = {
   EQUIPMENT: 'church_equipment',
   SMS_MESSAGES: 'church_sms_messages',
   USERS: 'church_users',
+  REPORTS: 'church_reports',
   SETTINGS: 'church_settings'
 };
 
@@ -388,6 +401,35 @@ export const ChurchDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     })
   );
 
+  const [reports, setReports] = useState<Report[]>(() =>
+    loadFromStorage(STORAGE_KEYS.REPORTS, [
+      {
+        id: '1',
+        title: 'Monthly Financial Report - January 2024',
+        type: 'Financial',
+        dateGenerated: '2024-01-31',
+        status: 'Ready',
+        description: 'Complete financial overview for January 2024'
+      },
+      {
+        id: '2',
+        title: 'Attendance Analysis - Q4 2023',
+        type: 'Attendance',
+        dateGenerated: '2024-01-15',
+        status: 'Ready',
+        description: 'Quarterly attendance trends and analysis'
+      },
+      {
+        id: '3',
+        title: 'Member Growth Report - 2023',
+        type: 'Membership',
+        dateGenerated: '2024-01-05',
+        status: 'Processing',
+        description: 'Annual member growth and retention analysis'
+      }
+    ])
+  );
+
   // Save to localStorage whenever state changes
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.MEMBERS, members);
@@ -420,6 +462,10 @@ export const ChurchDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.SETTINGS, settings);
   }, [settings]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.REPORTS, reports);
+  }, [reports]);
 
   // Member functions
   const addMember = (member: Omit<Member, 'id'>) => {
@@ -519,6 +565,33 @@ export const ChurchDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setUsers(prev => prev.filter(user => user.id !== id));
   };
 
+  // Report functions
+  const addReport = (report: Omit<Report, 'id'>) => {
+    const newReport = { ...report, id: Date.now().toString() };
+    setReports(prev => [newReport, ...prev]);
+  };
+
+  const generateReport = (type: string) => {
+    const reportTypes: { [key: string]: string } = {
+      'Membership': 'Membership Report',
+      'Financial': 'Financial Report',
+      'Attendance': 'Attendance Report',
+      'Growth': 'Growth Analytics Report',
+      'Custom': 'Custom Report',
+      'Event': 'Event Report'
+    };
+
+    const newReport: Omit<Report, 'id'> = {
+      title: `${reportTypes[type]} - ${new Date().toLocaleDateString()}`,
+      type,
+      dateGenerated: new Date().toISOString().split('T')[0],
+      status: 'Ready',
+      description: `Generated ${reportTypes[type].toLowerCase()} with current data`
+    };
+
+    addReport(newReport);
+  };
+
   // Settings functions
   const updateSettings = (settingsUpdate: Partial<ChurchSettings>) => {
     setSettings(prev => ({ ...prev, ...settingsUpdate }));
@@ -532,6 +605,7 @@ export const ChurchDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     equipment,
     smsMessages,
     users,
+    reports,
     settings,
     addMember,
     updateMember,
@@ -548,6 +622,8 @@ export const ChurchDataProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     addUser,
     updateUser,
     deleteUser,
+    addReport,
+    generateReport,
     updateSettings
   };
 
