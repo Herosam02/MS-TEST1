@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setI
             <div className="p-2 bg-blue-600 rounded-lg">
               <Church className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-white">ChurchOS</h1>
+            <h1 className="text-xl font-bold text-white">JMWO Church MS</h1>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
